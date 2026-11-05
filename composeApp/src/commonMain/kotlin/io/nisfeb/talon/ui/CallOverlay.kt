@@ -1,5 +1,7 @@
 package io.nisfeb.talon.ui
 
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.ui.text.withStyle
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.ui.semantics.contentDescription
