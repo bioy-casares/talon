@@ -62,7 +62,7 @@ class AppShellTest {
     private fun app(
         seed: suspend AppDatabase.() -> Unit = {},
         ai: FakeAiSettings = FakeAiSettings(),
-        ui: UiSettings = InMemoryUiSettings(),
+        ui: UiSettings = InMemoryUiSettings(initialRailVisibility = RailItem.entries.associateWith { true }),
         // The test window is 1024dp wide: Modifier.size clamps anything
         // wider to that, so 1200 here is really 1024.
         width: androidx.compose.ui.unit.Dp = 1200.dp,
@@ -164,7 +164,7 @@ class AppShellTest {
         )) {
             onNodeWithContentDescription(item).performClick()
             waitUntil(timeoutMillis = 5_000) { showing(marker) }
-            assertTrue(!present("Chats"), "$item takes the whole window")
+            assertTrue(present("Chats"), "$item opens beside the rail")
             onNodeWithContentDescription("Back").performClick()
             home()
         }
@@ -569,7 +569,7 @@ class AppShellTest {
     // and the tab is saved, so Talon opened on it again.
     @Test
     fun `with no rail, Mail has its header and a way back to the chats`() {
-        val ui = InMemoryUiSettings()
+        val ui = InMemoryUiSettings(initialRailVisibility = RailItem.entries.associateWith { true })
         app(ui = ui, width = 600.dp) {
             assertTrue(!present("Mail"), "a phone-width window has no rail")
             // Where the drawer, the home page and a saved tab all land.
@@ -1311,7 +1311,7 @@ class AppShellTest {
     // on Home: the chat was set behind a tab that takes the whole area.
     @Test
     fun `a chat asked for from Home or Mail is shown, on the Chats tab`() {
-        val ui = InMemoryUiSettings()
+        val ui = InMemoryUiSettings(initialRailVisibility = RailItem.entries.associateWith { true })
         app(ui = ui, seed = busSaid) {
             onNodeWithContentDescription("Home").performClick()
             waitUntil(timeoutMillis = 5_000) { showing("Set a location") }
@@ -1330,7 +1330,7 @@ class AppShellTest {
     // A chat opened from a tab that shows one beside it stays on that tab.
     @Test
     fun `a chat asked for from Bookmarks opens beside the bookmarks`() {
-        val ui = InMemoryUiSettings()
+        val ui = InMemoryUiSettings(initialRailVisibility = RailItem.entries.associateWith { true })
         app(ui = ui, seed = busSaid) {
             onNodeWithContentDescription("Bookmarks").performClick()
             waitUntil(timeoutMillis = 5_000) { showing("No bookmarks yet") }
@@ -1353,7 +1353,7 @@ class AppShellTest {
         waitUntil(timeoutMillis = 5_000) { showing("Generate Login QR") }
         press(Key.Escape)
         waitUntil(timeoutMillis = 5_000) { !showing("Generate Login QR") }
-        assertTrue(showing("Appearance") && !present("Chats"), "Settings, where it was opened")
+        assertTrue(showing("Appearance") && present("Chats"), "Settings, where it was opened, with the rail beside it")
         press(Key.Escape)
         home()
     }
@@ -1435,7 +1435,7 @@ class AppShellTest {
     // area opens as its rail item would open it.
     @Test
     fun `a shortcut the owner set opens its area`() {
-        val ui = InMemoryUiSettings().apply { setKeybinds(mapOf("open:Settings" to null, "open:Contacts" to null, "open:Profile" to KeyCombo("P", alt = true))) }
+        val ui = InMemoryUiSettings(initialRailVisibility = RailItem.entries.associateWith { true }).apply { setKeybinds(mapOf("open:Settings" to null, "open:Contacts" to null, "open:Profile" to KeyCombo("P", alt = true))) }
         app(ui = ui) {
             onAllNodes(androidx.compose.ui.test.isRoot())[0].performKeyInput { withKeyDown(Key.AltLeft) { pressKey(Key.P) } }
             waitUntil(timeoutMillis = 5_000) { onAllNodesWithText("Edit profile").fetchSemanticsNodes().isNotEmpty() }
@@ -1584,7 +1584,7 @@ class AppShellTest {
 
     private fun threadWithButtonsHidden(width: androidx.compose.ui.unit.Dp) = app(
         width = width,
-        ui = InMemoryUiSettings(initialHide = true),
+        ui = InMemoryUiSettings(initialHide = true, initialRailVisibility = RailItem.entries.associateWith { true }),
         seed = { messages().upsert(MessageEntity("~bus", "~bus/170141184506", "~bus", 1_000, """[{"inline":["shall we meet"]}]""", "/chat")) },
     ) {
         onNodeWithText("DMs").performClick()

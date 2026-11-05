@@ -27,7 +27,7 @@ class SectionsDrawerTest {
             TalonTheme(darkTheme = false) {
                 SectionsDrawer(
                     order = listOf(RailItem.Mail, RailItem.Chats, RailItem.Invites, RailItem.Calendar, RailItem.Settings),
-                    visibility = mapOf(RailItem.Invites to false),
+                    visibility = mapOf(RailItem.Invites to false, RailItem.Mail to true),
                     active = RailItem.Chats,
                     onSection = { went += railLabel(it) },
                     canOpen = { it != RailItem.Calendar },

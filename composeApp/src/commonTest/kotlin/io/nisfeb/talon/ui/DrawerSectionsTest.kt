@@ -7,10 +7,12 @@ import kotlin.test.assertTrue
 class DrawerSectionsTest {
 
     private val all = RailItem.entries.toList()
+    /** Every section shown, as if each was turned on (some start hidden). */
+    private val allShown = all.associateWith { true }
 
     @Test
     fun `hiding a section leaves it out`() {
-        val out = drawerSections(all, mapOf(RailItem.Bookmarks to false))
+        val out = drawerSections(all, allShown + (RailItem.Bookmarks to false))
         assertTrue(RailItem.Bookmarks !in out)
         assertTrue(RailItem.Mail in out)
     }
@@ -33,6 +35,6 @@ class DrawerSectionsTest {
     @Test
     fun `order is preserved`() {
         val reversed = all.reversed()
-        assertEquals(reversed, drawerSections(reversed, emptyMap()))
+        assertEquals(reversed, drawerSections(reversed, allShown))
     }
 }

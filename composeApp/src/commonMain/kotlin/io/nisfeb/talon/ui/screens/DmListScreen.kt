@@ -1984,7 +1984,7 @@ internal fun ShipSwitcherDrawer(
                             overflow = TextOverflow.Ellipsis,
                         )
                         Text(
-                            "Edit profile",
+                            "Profile settings",
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )

@@ -29,7 +29,7 @@ import kotlin.test.assertTrue
  */
 @OptIn(ExperimentalTestApi::class)
 class SidebarSettingsScreenTest {
-    private val ui = InMemoryUiSettings()
+    private val ui = InMemoryUiSettings(initialRailVisibility = RailItem.entries.associateWith { true })
     private val ship = FakeShip("~zod")
 
     private fun sidebar(synced: Boolean = true, block: ComposeUiTest.(AppDatabase) -> Unit) {

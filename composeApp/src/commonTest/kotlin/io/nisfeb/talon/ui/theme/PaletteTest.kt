@@ -8,7 +8,7 @@ import kotlin.test.assertEquals
 import kotlin.test.assertNotEquals
 
 class PaletteTest {
-    /** Material's baseline surface roles are lavender; ours must be the stone palette in both modes. */
+    /** Material's baseline surface roles are lavender; ours must be the neutral grays in both modes. */
     @Test
     fun surfaceRolesAreOurs() {
         val light = talonColors(false)
@@ -21,6 +21,6 @@ class PaletteTest {
         }
         // Popups are drawn in the surface colour (PopupColorsTest).
         assertEquals(Color(0xFFFFFFFF), light.surfaceContainer)
-        assertEquals(Color(0xFFFAFAF9), light.background)
+        assertEquals(Color(0xFFFAFAFA), light.background)
     }
 }
