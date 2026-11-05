@@ -2475,6 +2475,10 @@ fun App(
                                     drawerScope.launch { drawerState.close() }
                                     addShip()
                                 },
+                                onOpenProfile = {
+                                    drawerScope.launch { drawerState.close() }
+                                    showSelfProfile = true
+                                },
                                 onSignOut = { gone ->
                                     drawerScope.launch { drawerState.close() }
                                     forgetShip(gone, false)
@@ -2663,6 +2667,12 @@ fun App(
                         }
                         SettingsScreen(
                             // Every group's level at once, synced like a group's own.
+                            // The rail's shown and hidden items back to the defaults, synced.
+                            onResetRail = {
+                                repo.settingsSync?.let { sync ->
+                                    repo.carry { io.nisfeb.talon.ui.RailItem.entries.forEach { sync.setRailItemVisibility(it, it !in io.nisfeb.talon.ui.HIDDEN_BY_DEFAULT) } }
+                                }
+                            },
                             onSetAllGroupsNotify = { level ->
                                 val sync = repo.settingsSync ?: error("settings do not sync on this device")
                                 val flags = db.groups().allGroups().map { it.flag }
@@ -3897,6 +3907,10 @@ fun App(
                             // The assistant outranks the two tabs that take the
                             // whole area; opened over either, it used to show nothing.
                             sectionContent = sectionScreen,
+                            // Long-press and drag an icon to reorder the rail.
+                            onReorderRail = { visible ->
+                                uiSettings.setRailItemOrder(io.nisfeb.talon.ui.mergeRailOrder(railItemOrder, visible))
+                            },
                             content = if (activeRailTab == RailTab.Home && !showAssistant && !showEvening) {
                                 {
                                     io.nisfeb.talon.ui.screens.HomeScreen(

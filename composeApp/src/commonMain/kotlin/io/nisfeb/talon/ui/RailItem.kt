@@ -65,8 +65,17 @@ fun railItemOrNull(name: String?): RailItem? {
  */
 fun Map<RailItem, Boolean>.isVisible(item: RailItem): Boolean {
     if (item == RailItem.Chats) return true
-    return this[item] ?: true
+    return this[item] ?: (item !in HIDDEN_BY_DEFAULT)
 }
+
+/**
+ * Off the rail until someone puts them on (Settings, Sidebar): the rail
+ * starts short. My profile lives in the logo's menu at the rail's foot.
+ * Each stays in the More menu while hidden.
+ */
+val HIDDEN_BY_DEFAULT: Set<RailItem> = setOf(
+    RailItem.Bookmarks, RailItem.Mail, RailItem.Calendar, RailItem.Administration, RailItem.Profile,
+)
 
 /**
  * Which sections the drawer shows, and the one it may never drop.
@@ -123,4 +132,16 @@ fun sanitizeRailItemOrder(saved: List<RailItem>): List<RailItem> {
     for (item in seen) if (item in universe) result.add(item)
     for (item in universe) if (item !in result) result.add(item)
     return result
+}
+
+/**
+ * The whole rail order after the visible items were dragged into
+ * [visibleInNewOrder]: each visible item takes the next place the
+ * visible ones held in [full], and hidden items keep theirs, so one
+ * shown again comes back where it was.
+ */
+fun mergeRailOrder(full: List<RailItem>, visibleInNewOrder: List<RailItem>): List<RailItem> {
+    val moved = visibleInNewOrder.toSet()
+    val next = visibleInNewOrder.iterator()
+    return full.map { if (it in moved && next.hasNext()) next.next() else it }
 }

@@ -1951,6 +1951,8 @@ internal fun ShipSwitcherDrawer(
     onSignOut: ((String) -> Unit)? = null,
     /** Drop the session and everything stored under it. */
     onForget: ((String) -> Unit)? = null,
+    /** Opens the signed-in ship's profile; null where unwired. */
+    onOpenProfile: (() -> Unit)? = null,
 ) {
     var menuFor by remember { mutableStateOf<String?>(null) }
     var confirmForget by remember { mutableStateOf<String?>(null) }
@@ -1961,6 +1963,35 @@ internal fun ShipSwitcherDrawer(
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(4.dp),
         ) {
+            // The signed-in ship first, with its profile: the logo's menu is
+            // where "you" lives, so My profile is not a rail icon of its own.
+            if (activeShip != null && onOpenProfile != null) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(10.dp))
+                        .clickable { onOpenProfile() }
+                        .padding(horizontal = 8.dp, vertical = 10.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                ) {
+                    io.nisfeb.talon.ui.ShipMark(activeShip, size = 40.dp)
+                    Column(Modifier.weight(1f)) {
+                        Text(
+                            nicknames[activeShip] ?: io.nisfeb.talon.ui.shipHandle(activeShip),
+                            style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.SemiBold),
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                        )
+                        Text(
+                            "Edit profile",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                }
+                HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+            }
             Text(
                 "Ships",
                 style = MaterialTheme.typography.labelMedium,

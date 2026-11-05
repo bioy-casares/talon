@@ -1,5 +1,12 @@
 package io.nisfeb.talon.ui
 
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.getValue
+import kotlin.math.roundToInt
+import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.zIndex
 import androidx.compose.foundation.background
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.ui.platform.LocalLayoutDirection
@@ -106,6 +113,8 @@ fun DesktopShell(
     // A full-screen section (Settings, a profile, New message...) drawn in
     // the area beside the rail, over [content], so the rail stays.
     sectionContent: (@Composable () -> Unit)? = null,
+    /** The rail's visible items in the order a long-press drag left them. */
+    onReorderRail: ((List<RailItem>) -> Unit)? = null,
     /** The screen's left and right safe areas; a test hands in its own. */
     sideInsets: WindowInsets = WindowInsets.safeDrawing.only(WindowInsetsSides.Horizontal),
     modifier: Modifier = Modifier,
@@ -148,6 +157,7 @@ fun DesktopShell(
                 onItemClicked = onItemClicked,
                 menuBadges = menuBadges,
                 footer = railFooter,
+                onReorder = onReorderRail,
             )
             // weight(1f) so the scaffold fills the remaining width AFTER
             // the rail's 64dp. fillMaxSize() here used to draw the
@@ -199,8 +209,16 @@ private fun DesktopRail(
     onItemClicked: (RailItem) -> Unit,
     menuBadges: MenuBadges,
     footer: (@Composable () -> Unit)? = null,
+    /** Long-press an icon and drag it up or down; the new order on release. */
+    onReorder: ((List<RailItem>) -> Unit)? = null,
     modifier: Modifier = Modifier,
 ) {
+    // The order while an icon is being dragged; the saved one otherwise.
+    var order by androidx.compose.runtime.remember(enabledItems) { androidx.compose.runtime.mutableStateOf(enabledItems) }
+    var dragging by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf<RailItem?>(null) }
+    var dragDy by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(0f) }
+    // One icon's slot: the 48dp button and the 4dp gap under it.
+    val stepPx = with(LocalDensity.current) { 52.dp.toPx() }
     Surface(
         color = MaterialTheme.colorScheme.surfaceVariant,
         modifier = modifier.fillMaxHeight().width(RAIL_WIDTH),
@@ -217,7 +235,7 @@ private fun DesktopRail(
                 .verticalScroll(androidx.compose.foundation.rememberScrollState())
                 .padding(vertical = 8.dp),
         ) {
-            for (item in enabledItems) {
+            for (item in order) {
                 // A modal destination (Assistant) wins the highlight while
                 // it's showing, so the previously-active pane-tab goes dark.
                 val isSelected = if (activeModalItem != null) {
@@ -225,12 +243,47 @@ private fun DesktopRail(
                 } else {
                     item.isPaneTab && item.toRailTab() == activeTab
                 }
-                RailIconButton(
-                    item = item,
-                    isSelected = isSelected,
-                    showBadge = menuBadges.forItem(item),
-                    onClick = { onItemClicked(item) },
-                )
+                val lifted = dragging == item
+                Box(
+                    Modifier
+                        .zIndex(if (lifted) 1f else 0f)
+                        .graphicsLayer {
+                            translationY = if (lifted) dragDy else 0f
+                            val s = if (lifted) 1.08f else 1f
+                            scaleX = s; scaleY = s
+                        }
+                        .then(
+                            if (onReorder == null) Modifier
+                            else Modifier.pointerInput(item) {
+                                detectDragGesturesAfterLongPress(
+                                    onDragStart = { dragging = item; dragDy = 0f },
+                                    onDrag = { change, amount ->
+                                        change.consume()
+                                        dragDy += amount.y
+                                        val i = order.indexOf(item)
+                                        val target = (i + (dragDy / stepPx).roundToInt()).coerceIn(0, order.lastIndex)
+                                        if (target != i) {
+                                            order = order.toMutableList().apply { removeAt(i); add(target, item) }
+                                            dragDy -= (target - i) * stepPx
+                                        }
+                                    },
+                                    onDragEnd = {
+                                        dragging = null
+                                        dragDy = 0f
+                                        if (order != enabledItems) onReorder(order)
+                                    },
+                                    onDragCancel = { dragging = null; dragDy = 0f; order = enabledItems },
+                                )
+                            },
+                        ),
+                ) {
+                    RailIconButton(
+                        item = item,
+                        isSelected = isSelected,
+                        showBadge = menuBadges.forItem(item),
+                        onClick = { onItemClicked(item) },
+                    )
+                }
                 Spacer(Modifier.height(4.dp))
             }
         }

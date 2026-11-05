@@ -82,6 +82,8 @@ import io.nisfeb.talon.ai.orreryOn
 @Composable
 fun SettingsScreen(
     aiSettings: AiSettingsRepository,
+    /** Puts the rail's shown and hidden items back to the defaults, through the ship. */
+    onResetRail: (suspend () -> Unit)? = null,
     /** Sets every group's notification level at once; returns how many. Null hides the control. */
     onSetAllGroupsNotify: (suspend (level: String) -> Int)? = null,
     themePreference: ThemePreference,
@@ -311,6 +313,39 @@ fun SettingsScreen(
                     tint = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
+            // Everything on these pages back to how a new install starts.
+            var confirmReset by remember { mutableStateOf(false) }
+            var resetNote by remember { mutableStateOf<String?>(null) }
+            val resetScope = rememberCoroutineScope()
+            Spacer(Modifier.height(12.dp))
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                Column(Modifier.weight(1f)) {
+                    Text("Reset settings", style = MaterialTheme.typography.bodyLarge)
+                    Text(
+                        resetNote ?: "Theme, layout, the sidebar, shortcuts and chat options back to their defaults. " +
+                            "Your saved themes, fonts and chats stay.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+                io.nisfeb.talon.ui.OutlinedButton(onClick = { confirmReset = true }) { Text("Reset") }
+            }
+            if (confirmReset) io.nisfeb.talon.ui.ConfirmDestructive(
+                title = "Reset settings?",
+                text = "Theme, layout, the sidebar, keyboard shortcuts and chat options go back to their defaults.",
+                confirm = "Reset",
+                onConfirm = {
+                    confirmReset = false
+                    io.nisfeb.talon.ui.resetLookAndLayout(uiSettings, themePreference)
+                    resetNote = "Settings reset."
+                    onResetRail?.let { reset ->
+                        resetScope.launch {
+                            runCatching { reset() }.onFailure { resetNote = "Settings reset; the sidebar could not be saved to your ship." }
+                        }
+                    }
+                },
+                onDismiss = { confirmReset = false },
+            )
             }
             if (safeTab == SettingsTab.Appearance) {
             Text(
@@ -731,9 +766,11 @@ fun SettingsScreen(
             Spacer(Modifier.height(4.dp))
 
             }
-            if (safeTab == SettingsTab.Experimental &&
+            // The local ship and its Dojo are the Urbit side of things.
+            if (safeTab == SettingsTab.Account &&
                 io.nisfeb.talon.ui.isLocalCometSupported && localShip.pierExists()
             ) {
+                HorizontalDivider()
                 LocalShipSection(localShip)
                 Spacer(Modifier.height(8.dp))
             }

@@ -2479,6 +2479,12 @@ fun TalonApp(
                 }
                 SettingsScreen(
                     // Every group's level at once, synced like a group's own.
+                    // The rail's shown and hidden items back to the defaults, synced.
+                    onResetRail = {
+                        app.repo.settingsSync?.let { sync ->
+                            app.repo.carry { io.nisfeb.talon.ui.RailItem.entries.forEach { sync.setRailItemVisibility(it, it !in io.nisfeb.talon.ui.HIDDEN_BY_DEFAULT) } }
+                        }
+                    },
                     onSetAllGroupsNotify = { level ->
                         val sync = app.repo.settingsSync ?: error("settings do not sync on this device")
                         val flags = app.db.groups().allGroups().map { it.flag }
