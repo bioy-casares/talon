@@ -285,7 +285,8 @@ data class AccentSettings(
          * send tint they're used to) and false for single-ship.
          */
         fun isEnabled(stored: AccentSettings, multiShip: Boolean): Boolean =
-            stored.enabled ?: multiShip
+            // Off unless chosen: the app is grayscale by default (2026-11-05).
+            stored.enabled ?: false
     }
 }
 

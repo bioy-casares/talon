@@ -462,14 +462,8 @@ fun SettingsScreen(
             // ── Accent color ────────────────────────────────────────
             FeatureToggleRow(
                 label = "Custom accent color",
-                description = if (multiShip) {
-                    "Tints the send icon, focused text fields, and per-" +
-                        "ship pip. On for multi-ship users by default."
-                } else {
-                    "Tints the send icon, focused text fields, and " +
-                        "other primary-colored UI. Off keeps the brand " +
-                        "amber everywhere."
-                },
+                description = "Adds a colour to the send button, focused fields and " +
+                    "selections. Off keeps Groundwire grayscale.",
                 enabled = accentEnabled,
                 onChange = { on ->
                     uiSettings.setAccentSettings(accentSettings.copy(enabled = on))

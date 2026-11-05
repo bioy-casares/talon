@@ -102,9 +102,9 @@ class DesktopUiSettingsTest {
     }
 
     @Test
-    fun `AccentSettings isEnabled defaults to multiShip when stored value unset`() {
+    fun `AccentSettings isEnabled is off when unset, with one ship or several`() {
         kotlin.test.assertEquals(
-            true,
+            false,
             AccentSettings.isEnabled(AccentSettings(enabled = null), multiShip = true),
         )
         kotlin.test.assertEquals(

@@ -103,10 +103,14 @@ fun DesktopShell(
     // panes (e.g. the assistant: its own conversations/jobs sidebar + a
     // transcript). Keeps the rail visible for navigation.
     content: (@Composable () -> Unit)? = null,
+    // A full-screen section (Settings, a profile, New message...) drawn in
+    // the area beside the rail, over [content], so the rail stays.
+    sectionContent: (@Composable () -> Unit)? = null,
     /** The screen's left and right safe areas; a test hands in its own. */
     sideInsets: WindowInsets = WindowInsets.safeDrawing.only(WindowInsetsSides.Horizontal),
     modifier: Modifier = Modifier,
 ) {
+    val content = sectionContent ?: content
     BoxWithConstraints(modifier = modifier.fillMaxSize()) {
         val expanded = maxWidth >= ExpandedThreshold
         if (!expanded) {

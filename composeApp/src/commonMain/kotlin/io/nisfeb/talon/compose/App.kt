@@ -2566,70 +2566,29 @@ fun App(
                     // bridge — resolving channel-nest → group-flag is a
                     // suspend DAO call.
                     val rightPaneScope = rememberCoroutineScope()
+                    // A section open over the chats. On a wide window it is drawn
+                    // beside the rail (DesktopShell's sectionContent), so the rail
+                    // never goes away; on a narrow one it takes the screen, as before.
+                    val anySectionOpen = (showApps) ||
+                        (showSidebarSettings) ||
+                        (showLoops) ||
+                        (showSettings) ||
+                        (showSelfProfile) ||
+                        (showStatusFeed) ||
+                        (showInvites) ||
+                        (showCalendar) ||
+                        (showBookmarks) ||
+                        (showActivity) ||
+                        (showSearch) ||
+                        (showNewDm) ||
+                        (showContacts) ||
+                        (showEvening) ||
+                        (showActions) ||
+                        (openGroupAdminFlag != null) ||
+                        (showGroupAdminList) ||
+                        (openGroupHomeFlag != null)
+                    val sectionScreen: (@Composable () -> Unit)? = if (!anySectionOpen) null else { {
                     when {
-                    shareLoginQrOpen -> io.nisfeb.talon.ui.screens.LoginQrShareScreen(
-                        onBack = { shareLoginQrOpen = false },
-                    )
-                    ship == null && localShipSetupOpen -> io.nisfeb.talon.ui.screens.LocalShipSetupScreen(
-                        localShip = localShip,
-                        onReady = { ready ->
-                            loopScope.launch {
-                                session.login(ready.url, ready.code)
-                                    .onSuccess { who ->
-                                        pendingLanding = who to io.nisfeb.talon.comet.LocalShip.LANDING_GROUP
-                                        localShipSetupOpen = false
-                                        loggedInShip = who
-                                    }
-                                    .onFailure {
-                                        loginNotice = io.nisfeb.talon.ui.screens.bootedLoginNotice(it)
-                                        localShipSetupOpen = false
-                                    }
-                            }
-                        },
-                        onCancel = {
-                            localShipSetupOpen = false
-                            loopScope.launch { runCatching { localShip.stop() } }
-                        },
-                    )
-                    ship == null -> LoginScreen(
-                        session = session,
-                        onLoggedIn = { addingFrom = null; lapsing = null; lapseHeldOff = lapseHeldOff - it; loggedInShip = it },
-                        onLoginCode = { who, code ->
-                            if (io.nisfeb.talon.ui.isRelayNotificationSetupNeeded) notifyCode = who to code
-                        },
-                        onCancel = addingFrom?.let { from ->
-                            {
-                                if (lapsing == from) lapseHeldOff = lapseHeldOff + from
-                                addingFrom = null
-                                lapsing = null
-                                switchShip(from)
-                            }
-                        },
-                        notice = loginNotice,
-                        onRunLocalShip = if (io.nisfeb.talon.ui.isLocalCometSupported) {
-                            { localShipSetupOpen = true }
-                        } else {
-                            null
-                        },
-                        // iOS scans with the camera; desktop has none to
-                        // assume and the keyboard is already the fast path.
-                        // The generator works everywhere: the QR matrix is
-                        // painted and shown to a phone.
-                        qrScanIntegration = if (io.nisfeb.talon.ui.isQrScanSupported) {
-                            { onResult -> io.nisfeb.talon.ui.rememberQrLoginScanLauncher(onResult) }
-                        } else null,
-                        onOpenShareQr = { shareLoginQrOpen = true },
-                    )
-                    // Sidebar settings drills out of Settings; both flags
-                    // are true while the user is in Sidebar. Order this
-                    // branch BEFORE `showSettings` so the deeper screen
-                    // wins. Back from Sidebar clears `showSidebarSettings`
-                    // and falls through to the next branch — `showSettings`
-                    // — which renders Settings, giving the user a
-                    // breadcrumb pop instead of a full unwind to the
-                    // chat list.
-                    // Before showSettings, so Back from Apps pops to
-                    // Settings rather than out of it (same as Sidebar).
                     showApps -> io.nisfeb.talon.ui.screens.AppsSettingsScreen(
                         mail = mailRepo,
                         calendar = calendarRepo,
@@ -2773,7 +2732,7 @@ fun App(
                     showSelfProfile -> ProfileEditScreen(
                         db = db,
                         repo = repo,
-                        ourPatp = ship,
+                        ourPatp = ship.orEmpty(),
                         onBack = { showSelfProfile = false },
                         sections = sections,
                         keys = remember(session) {
@@ -2789,7 +2748,7 @@ fun App(
                     showStatusFeed -> StatusFeedScreen(
                         db = db,
                         repo = repo,
-                        ourPatp = ship,
+                        ourPatp = ship.orEmpty(),
                         onBack = { showStatusFeed = false },
                         onOpenContact = { other -> profileSheetShip = other },
                     )
@@ -2949,6 +2908,74 @@ fun App(
                             openChat = nest
                         },
                     )
+                    else -> Unit
+                    }
+                    } }
+                    when {
+                    shareLoginQrOpen -> io.nisfeb.talon.ui.screens.LoginQrShareScreen(
+                        onBack = { shareLoginQrOpen = false },
+                    )
+                    ship == null && localShipSetupOpen -> io.nisfeb.talon.ui.screens.LocalShipSetupScreen(
+                        localShip = localShip,
+                        onReady = { ready ->
+                            loopScope.launch {
+                                session.login(ready.url, ready.code)
+                                    .onSuccess { who ->
+                                        pendingLanding = who to io.nisfeb.talon.comet.LocalShip.LANDING_GROUP
+                                        localShipSetupOpen = false
+                                        loggedInShip = who
+                                    }
+                                    .onFailure {
+                                        loginNotice = io.nisfeb.talon.ui.screens.bootedLoginNotice(it)
+                                        localShipSetupOpen = false
+                                    }
+                            }
+                        },
+                        onCancel = {
+                            localShipSetupOpen = false
+                            loopScope.launch { runCatching { localShip.stop() } }
+                        },
+                    )
+                    ship == null -> LoginScreen(
+                        session = session,
+                        onLoggedIn = { addingFrom = null; lapsing = null; lapseHeldOff = lapseHeldOff - it; loggedInShip = it },
+                        onLoginCode = { who, code ->
+                            if (io.nisfeb.talon.ui.isRelayNotificationSetupNeeded) notifyCode = who to code
+                        },
+                        onCancel = addingFrom?.let { from ->
+                            {
+                                if (lapsing == from) lapseHeldOff = lapseHeldOff + from
+                                addingFrom = null
+                                lapsing = null
+                                switchShip(from)
+                            }
+                        },
+                        notice = loginNotice,
+                        onRunLocalShip = if (io.nisfeb.talon.ui.isLocalCometSupported) {
+                            { localShipSetupOpen = true }
+                        } else {
+                            null
+                        },
+                        // iOS scans with the camera; desktop has none to
+                        // assume and the keyboard is already the fast path.
+                        // The generator works everywhere: the QR matrix is
+                        // painted and shown to a phone.
+                        qrScanIntegration = if (io.nisfeb.talon.ui.isQrScanSupported) {
+                            { onResult -> io.nisfeb.talon.ui.rememberQrLoginScanLauncher(onResult) }
+                        } else null,
+                        onOpenShareQr = { shareLoginQrOpen = true },
+                    )
+                    // Sidebar settings drills out of Settings; both flags
+                    // are true while the user is in Sidebar. Order this
+                    // branch BEFORE `showSettings` so the deeper screen
+                    // wins. Back from Sidebar clears `showSidebarSettings`
+                    // and falls through to the next branch — `showSettings`
+                    // — which renders Settings, giving the user a
+                    // breadcrumb pop instead of a full unwind to the
+                    // chat list.
+                    // Before showSettings, so Back from Apps pops to
+                    // Settings rather than out of it (same as Sidebar).
+                    sectionScreen != null && !expanded -> sectionScreen()
                     viewerImageList != null -> ImageViewerScreen(
                         urls = viewerImageList!!.urls,
                         initialIndex = viewerImageList!!.initialIndex,
@@ -3869,6 +3896,7 @@ fun App(
                             // only on narrow (where DesktopShell stacks it).
                             // The assistant outranks the two tabs that take the
                             // whole area; opened over either, it used to show nothing.
+                            sectionContent = sectionScreen,
                             content = if (activeRailTab == RailTab.Home && !showAssistant && !showEvening) {
                                 {
                                     io.nisfeb.talon.ui.screens.HomeScreen(
